@@ -7,7 +7,7 @@
 
 # 1. Overview
 
-This document outlines the threat model for the ElgHealth system using the STRIDE framework. The goal is to identify potential security threats and propose mitigations to protect sensitive healthcare data, ensure system integrity, and maintain user trust.
+This document outlines the threat model for the ElgHealth via the STRIDE framework. The goal is to identify potential security threats and propose mitigations to protect sensitive healthcare data, ensure system integrity, and maintain user trust.
 
 ---
 
@@ -24,8 +24,8 @@ This document outlines the threat model for the ElgHealth system using the STRID
 
 | Asset | Description |
 |------|------------|
-| User Credentials | Emails, passwords |
-| Patient Records | Lab results, prescriptions, medical notes |
+| User Credentials | Emails, password hashes |
+| Patient Records | Lab results, prescriptions, doctor notes |
 | Appointment Data | Scheduling and doctor-patient relationships |
 | System Availability | Continuous uptime (99.95%) |
 | Audit Logs | Record of system activity |
@@ -37,19 +37,20 @@ This document outlines the threat model for the ElgHealth system using the STRID
 ## 4.1 Spoofing Identity
 
 ### Threats
-- Unauthorized users impersonating patients or doctors
+- Unauthorized users impersonating patients or doctors through phished accounts
 - Credential stuffing or brute-force login attempts
 - Session hijacking
 
 ### Affected Components
 - Authentication system
 - Backend API
+- User Interface/Input Fields
 
 ### Mitigations
 - Multi-Factor Authentication (MFA)
 - Strong password policies (length, complexity)
 - Secure session management (HTTP-only, secure cookies)
-- Rate limiting and account lockouts
+- Proper password storage (hashing with salt)
 - OAuth or token-based authentication (e.g., JWT with expiration)
 
 ---
@@ -67,9 +68,9 @@ This document outlines the threat model for the ElgHealth system using the STRID
 
 ### Mitigations
 - Input validation and sanitization
-- Use of prepared statements / ORM
+- Use of prepared statements / ORM against SQLi
 - HTTPS encryption (TLS 1.2+)
-- Integrity checks (hashing, digital signatures)
+- Integrity checks (hashing/checksum, digital signatures)
 - Role-based access control (RBAC)
 
 ---
@@ -77,18 +78,17 @@ This document outlines the threat model for the ElgHealth system using the STRID
 ## 4.3 Repudiation
 
 ### Threats
-- Users denying actions (e.g., doctors denying record updates)
-- Lack of traceability for changes
+- Lack of traceability for changes/improper accountability
 
 ### Affected Components
 - Backend
 - Database
 
 ### Mitigations
+- Triage of system activity
 - Audit logging of all critical actions
 - Timestamped logs with user IDs
-- Immutable logs (append-only storage)
-- Log monitoring and alerting
+- Immutable logs (append-only storage/ROM)
 
 ---
 
@@ -96,8 +96,8 @@ This document outlines the threat model for the ElgHealth system using the STRID
 
 ### Threats
 - Exposure of sensitive patient data (PII, PHI)
-- Data leaks due to misconfigured APIs
-- Insecure data transmission
+  - Data leaks due to misconfigured APIs
+  - Insecure data transmission
 
 ### Affected Components
 - Frontend
@@ -105,11 +105,11 @@ This document outlines the threat model for the ElgHealth system using the STRID
 - Database
 
 ### Mitigations
-- Encryption at rest (AES-256)
-- Encryption in transit (TLS)
+- Encryption at rest (AES-256) with HMAC
+- Encryption in transit (TLS 2.1)
 - Strict access control policies
 - Data masking where applicable
-- Secure API design (no over-fetching of data)
+- Secure API design (no over-fetching of data, JIT/JER structure)
 - Regular security audits and penetration testing
 
 ---
@@ -130,16 +130,14 @@ This document outlines the threat model for the ElgHealth system using the STRID
 - Load balancing
 - Auto-scaling infrastructure
 - Web Application Firewall (WAF)
-- Monitoring and alerting systems
 
 ---
 
 ## 4.6 Elevation of Privilege
 
 ### Threats
-- Patients gaining doctor-level access
+- Patients gaining higher-level access
 - Unauthorized access to restricted endpoints
-- Exploiting vulnerabilities for admin privileges
 
 ### Affected Components
 - Backend API
@@ -150,25 +148,11 @@ This document outlines the threat model for the ElgHealth system using the STRID
 - Principle of Least Privilege
 - Backend authorization checks (not just frontend)
 - Regular security testing (e.g., privilege escalation tests)
+- Zero-Trust when applicable
 
 ---
 
-# 5. Data Flow Considerations
-
-### Key Flows
-1. User login → Authentication → Token issued  
-2. Patient schedules appointment → Backend → Database  
-3. Doctor updates medical record → Backend → Database  
-4. Patient retrieves records → Backend → Frontend  
-
-### Security Controls
-- All flows must use HTTPS
-- Tokens must be validated on every request
-- Sensitive operations require re-authentication (optional)
-
----
-
-# 6. Assumptions
+# 5. Assumptions
 
 - Users access system via modern browsers
 - Backend is hosted in a secure cloud environment
@@ -177,27 +161,12 @@ This document outlines the threat model for the ElgHealth system using the STRID
 
 ---
 
-# 7. Residual Risks
-
-- Zero-day vulnerabilities
-- Insider threats (malicious doctors/admins)
-- Misconfiguration of cloud services
-- Third-party dependency risks
-
----
-
-# 8. Recommendations
+# 6. Recommendations
 
 - Conduct regular penetration testing
 - Implement continuous security monitoring (SIEM)
 - Enforce HIPAA compliance standards
 - Perform dependency vulnerability scanning
 - Establish incident response plan
-
----
-
-# 9. Conclusion
-
-The STRIDE analysis highlights key security risks in authentication, data handling, and access control. By implementing the recommended mitigations, ElgHealth can significantly reduce its attack surface and ensure the confidentiality, integrity, and availability of sensitive healthcare data.
 
 ---
