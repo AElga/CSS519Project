@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: ./Project
+      dockerfile: backend/Dockerfile
+    environment:
+      PORT: 3000
+      DB_PATH: /data/elghealth.db
+    volumes:
+      - sqlite_data:/data
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: ./Project
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  sqlite_data:
