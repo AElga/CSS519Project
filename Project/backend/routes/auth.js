@@ -1,8 +1,23 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
-const db = require("../db");
+const { db, logsDb } = require("../db");
 
 const router = express.Router();
+
+function writeAuditLog(user, callback) {
+    logsDb.run(
+        `INSERT INTO audit_logs(event_type, user_email, user_id, event_time)
+         VALUES (?, ?, ?, ?)`,
+        ["login_success", user.email, user.user_id, new Date().toISOString()],
+        (err) => {
+            if (err) {
+                console.error("Failed to write audit log", err);
+            }
+
+            callback();
+        }
+    );
+}
 
 router.post("/register", async (req, res) => {
 
@@ -43,7 +58,9 @@ router.post("/login", (req, res) => {
                 return res.status(401).send("Invalid password");
             }
 
-            res.json(user);
+            writeAuditLog(user, () => {
+                res.json(user);
+            });
         }
     );
 });

@@ -22,6 +22,7 @@ async function login() {
     localStorage.setItem("user", JSON.stringify(user));
 
     window.location = "dashboard.html";
+    console.log("Worked");
 }
 
 async function schedule() {
