@@ -1,0 +1,41 @@
+name: Security Tests
+
+on:
+  push:
+    branches: [ main, HW5 ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [ 18.x, 20.x ]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Seed database
+        run: npm run seed
+
+      - name: Run security tests
+        run: npm run security_test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-results-${{ matrix.node-version }}
+          path: test-results/
+          retention-days: 30
