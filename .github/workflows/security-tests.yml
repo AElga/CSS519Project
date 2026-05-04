@@ -28,7 +28,7 @@ jobs:
       - name: Run security tests
         run: |
           cd Project
-          npm test
+          npm run security_test
 
       - name: Upload test results
         if: always()
