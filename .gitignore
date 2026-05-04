@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+package-lock.json
+npm-debug.log*
+
+# Build outputs
+dist/
+build/
+*.node
+
+# OS
+.DS_Store
+.env.local

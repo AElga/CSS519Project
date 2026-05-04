@@ -2,43 +2,37 @@ name: Security Tests
 
 on:
   push:
-    branches: [ main, HW5 ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   security-tests:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [ 18.x, 20.x ]
-
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v3
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: '18'
           cache: 'npm'
+          cache-dependency-path: 'Project/package-lock.json'
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Rebuild native modules
-        run: npm rebuild
-
-      - name: Seed database
-        run: npm run seed
+        run: |
+          cd Project
+          npm ci --build-from-source
 
       - name: Run security tests
-        run: npm run security_test
+        run: |
+          cd Project
+          npm test
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: security-test-results-${{ matrix.node-version }}
-          path: test-results/
-          retention-days: 30
+          name: test-results
+          path: Project/test-results/
