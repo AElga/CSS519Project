@@ -50,6 +50,18 @@ async function postJson(url, body) {
     return { response, payload };
 }
 
+async function runTest(name, testFn, failures) {
+    console.log(`Running ${name}`);
+
+    try {
+        await testFn();
+        console.log(`${name.split(":")[0]} passed`);
+    } catch (err) {
+        console.error(err.message);
+        failures.push(err.message);
+    }
+}
+
 async function runSecurityTests() {
     const seededUser = await getFromDb(
         db,
@@ -70,6 +82,7 @@ async function runSecurityTests() {
     );
 
     const server = app.listen(0);
+    const failures = [];
 
     try {
         await new Promise((resolve, reject) => {
@@ -79,64 +92,107 @@ async function runSecurityTests() {
 
         const { port } = server.address();
         const baseUrl = `http://127.0.0.1:${port}`;
+        let validLogin;
 
-        console.log("Running S-2: Invalid Login");
+        await runTest("S-2: Invalid Login", async () => {
+            const invalidLogin = await postJson(`${baseUrl}/auth/login`, {
+                email: seededUser.email,
+                password: "wrong"
+            });
 
-        const invalidLogin = await postJson(`${baseUrl}/auth/login`, {
-            email: seededUser.email,
-            password: "wrong"
-        });
+            if (invalidLogin.response.status !== 401) {
+                throw new Error(
+                    `S-2 failed: expected 401, got ${invalidLogin.response.status}`
+                );
+            }
+        }, failures);
 
-        if (invalidLogin.response.status !== 401) {
+        await runTest("R-1: Audit Logging", async () => {
+            validLogin = await postJson(`${baseUrl}/auth/login`, {
+                email: seededUser.email,
+                password: "Password123!"
+            });
+
+            if (validLogin.response.status !== 200) {
+                throw new Error(
+                    `R-1 setup failed: expected 200 login, got ${validLogin.response.status}`
+                );
+            }
+
+            const latestAuditLog = await getFromDb(
+                logsDb,
+                `SELECT log_id, user_email, event_time
+                 FROM audit_logs
+                 WHERE user_email = ? AND event_type = ?
+                 ORDER BY log_id DESC
+                 LIMIT 1`,
+                [seededUser.email, "login_success"]
+            );
+
+            const updatedLogCountRow = await getFromDb(
+                logsDb,
+                "SELECT COUNT(*) AS count FROM audit_logs WHERE user_email = ? AND event_type = ?",
+                [seededUser.email, "login_success"]
+            );
+
+            if (!latestAuditLog) {
+                throw new Error("R-1 failed: no audit log entry was created.");
+            }
+
+            if (updatedLogCountRow.count <= initialLogCountRow.count) {
+                throw new Error("R-1 failed: audit log count did not increase.");
+            }
+
+            if (!latestAuditLog.event_time) {
+                throw new Error("R-1 failed: audit log is missing its timestamp.");
+            }
+        }, failures);
+
+        await runTest("S-8: Login Response Does Not Expose Password Hash", async () => {
+            if (!validLogin || validLogin.response.status !== 200) {
+                throw new Error("S-8 setup failed: valid login response was not available.");
+            }
+
+            if (Object.prototype.hasOwnProperty.call(validLogin.payload, "password_hash")) {
+                throw new Error("S-8 failed: login response exposed password_hash.");
+            }
+        }, failures);
+
+        await runTest("R-3: Failed Login Does Not Log Success", async () => {
+            const beforeFailedLoginLogCount = await getFromDb(
+                logsDb,
+                "SELECT COUNT(*) AS count FROM audit_logs WHERE user_email = ? AND event_type = ?",
+                [seededUser.email, "login_success"]
+            );
+
+            const failedLogin = await postJson(`${baseUrl}/auth/login`, {
+                email: seededUser.email,
+                password: "definitely-wrong"
+            });
+
+            if (failedLogin.response.status !== 401) {
+                throw new Error(
+                    `R-3 setup failed: expected 401, got ${failedLogin.response.status}`
+                );
+            }
+
+            const afterFailedLoginLogCount = await getFromDb(
+                logsDb,
+                "SELECT COUNT(*) AS count FROM audit_logs WHERE user_email = ? AND event_type = ?",
+                [seededUser.email, "login_success"]
+            );
+
+            if (afterFailedLoginLogCount.count !== beforeFailedLoginLogCount.count) {
+                throw new Error("R-3 failed: failed login changed success audit log count.");
+            }
+        }, failures);
+
+        if (failures.length > 0) {
             throw new Error(
-                `S-2 failed: expected 401, got ${invalidLogin.response.status}`
+                `Security tests failed:\n${failures.map((failure) => `- ${failure}`).join("\n")}`
             );
         }
 
-        console.log("S-2 passed");
-
-        console.log("Running R-1: Audit Logging");
-
-        const validLogin = await postJson(`${baseUrl}/auth/login`, {
-            email: seededUser.email,
-            password: "Password123!"
-        });
-
-        if (validLogin.response.status !== 200) {
-            throw new Error(
-                `R-1 setup failed: expected 200 login, got ${validLogin.response.status}`
-            );
-        }
-
-        const latestAuditLog = await getFromDb(
-            logsDb,
-            `SELECT log_id, user_email, event_time
-             FROM audit_logs
-             WHERE user_email = ? AND event_type = ?
-             ORDER BY log_id DESC
-             LIMIT 1`,
-            [seededUser.email, "login_success"]
-        );
-
-        const updatedLogCountRow = await getFromDb(
-            logsDb,
-            "SELECT COUNT(*) AS count FROM audit_logs WHERE user_email = ? AND event_type = ?",
-            [seededUser.email, "login_success"]
-        );
-
-        if (!latestAuditLog) {
-            throw new Error("R-1 failed: no audit log entry was created.");
-        }
-
-        if (updatedLogCountRow.count <= initialLogCountRow.count) {
-            throw new Error("R-1 failed: audit log count did not increase.");
-        }
-
-        if (!latestAuditLog.event_time) {
-            throw new Error("R-1 failed: audit log is missing its timestamp.");
-        }
-
-        console.log("R-1 passed");
         console.log("All security tests passed");
     } finally {
         await new Promise((resolve, reject) => {
