@@ -2,11 +2,11 @@
   "name": "elghealth-prototype",
   "version": "1.0.0",
   "description": "HealthTech Appointment Management Prototype",
-  "main": "backend/server.js",
+  "main": "Project/backend/server.js",
   "scripts": {
-    "start": "node backend/server.js",
-    "seed": "node backend/seed.js",
-    "security_test": "node backend/security_test.js"
+    "start": "node Project/backend/server.js",
+    "seed": "node Project/backend/seed.js",
+    "security_test": "node Project/backend/security_test.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
