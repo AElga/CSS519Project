@@ -1,0 +1,96 @@
+rule_files:
+  - rules.yml
+
+evaluation_interval: 1m
+
+tests:
+  - name: login-attempt-rate-recording-rule
+    interval: 1m
+    input_series:
+      - series: 'elghealth_login_attempts_total{outcome="success"}'
+        values: '0 2 4 6 8 10 12'
+      - series: 'elghealth_login_attempts_total{outcome="invalid_password"}'
+        values: '0 1 2 3 4 5 6'
+    promql_expr_test:
+      - expr: 'elghealth:login_attempts:rate5m'
+        eval_time: 6m
+        exp_samples:
+          - labels: '{__name__="elghealth:login_attempts:rate5m",outcome="success"}'
+            value: 0.03333333333333333
+          - labels: '{__name__="elghealth:login_attempts:rate5m",outcome="invalid_password"}'
+            value: 0.016666666666666666
+
+  - name: request-failure-rate-recording-rule
+    interval: 1m
+    input_series:
+      - series: 'elghealth_http_requests_total{route="/auth/login",method="POST",status="401"}'
+        values: '0 1 2 3 4 5 6'
+      - series: 'elghealth_http_requests_total{route="/auth/login",method="POST",status="200"}'
+        values: '0 3 6 9 12 15 18'
+    promql_expr_test:
+      - expr: 'elghealth:http_request_failures:rate5m'
+        eval_time: 6m
+        exp_samples:
+          - labels: '{__name__="elghealth:http_request_failures:rate5m",method="POST",route="/auth/login",status="401"}'
+            value: 0.016666666666666666
+
+  - name: request-latency-recording-and-alert-rule
+    interval: 1m
+    input_series:
+      - series: 'elghealth_http_request_duration_seconds_bucket{route="/auth/login",method="POST",le="0.05"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0'
+      - series: 'elghealth_http_request_duration_seconds_bucket{route="/auth/login",method="POST",le="0.1"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0'
+      - series: 'elghealth_http_request_duration_seconds_bucket{route="/auth/login",method="POST",le="0.25"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0'
+      - series: 'elghealth_http_request_duration_seconds_bucket{route="/auth/login",method="POST",le="0.5"}'
+        values: '0 0 0 0 0 0 0 0 0 0 0'
+      - series: 'elghealth_http_request_duration_seconds_bucket{route="/auth/login",method="POST",le="1"}'
+        values: '0 10 20 30 40 50 60 70 80 90 100'
+      - series: 'elghealth_http_request_duration_seconds_bucket{route="/auth/login",method="POST",le="2.5"}'
+        values: '0 10 20 30 40 50 60 70 80 90 100'
+      - series: 'elghealth_http_request_duration_seconds_bucket{route="/auth/login",method="POST",le="5"}'
+        values: '0 10 20 30 40 50 60 70 80 90 100'
+      - series: 'elghealth_http_request_duration_seconds_bucket{route="/auth/login",method="POST",le="+Inf"}'
+        values: '0 10 20 30 40 50 60 70 80 90 100'
+      - series: 'elghealth_http_request_duration_seconds_sum{route="/auth/login",method="POST"}'
+        values: '0 8 16 24 32 40 48 56 64 72 80'
+      - series: 'elghealth_http_request_duration_seconds_count{route="/auth/login",method="POST"}'
+        values: '0 10 20 30 40 50 60 70 80 90 100'
+    promql_expr_test:
+      - expr: 'elghealth:http_request_latency:p95_5m'
+        eval_time: 10m
+        exp_samples:
+          - labels: '{__name__="elghealth:http_request_latency:p95_5m",method="POST",route="/auth/login"}'
+            value: 0.975
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ElgHealthHighApiLatency
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: backend
+              category: performance
+              route: /auth/login
+              method: POST
+            exp_annotations:
+              summary: ElgHealth API latency is elevated
+              description: The p95 latency for route /auth/login POST has been above 750ms for 5 minutes.
+
+  - name: request-error-alert-rule
+    interval: 1m
+    input_series:
+      - series: 'elghealth_http_requests_total{route="/appointments/:user_id",method="GET",status="500"}'
+        values: '0 2 4 6 8 10 12 14 16 18 20'
+      - series: 'elghealth_http_requests_total{route="/appointments/:user_id",method="GET",status="200"}'
+        values: '0 2 4 6 8 10 12 14 16 18 20'
+    alert_rule_test:
+      - eval_time: 10m
+        alertname: ElgHealthApiErrorsHigh
+        exp_alerts:
+          - exp_labels:
+              severity: warning
+              service: backend
+            exp_annotations:
+              summary: ElgHealth API error ratio is elevated
+              description: More than 5% of API responses have been 5xx for 5 minutes.

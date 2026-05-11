@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node Project/backend/server.js",
     "seed": "node Project/backend/seed.js",
-    "security_test": "node Project/backend/security_test.js"
+    "security_test": "node Project/backend/security_test.js",
+    "prometheus_rule_test": "node OE/prometheus/run-rule-tests.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",

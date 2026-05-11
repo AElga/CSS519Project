@@ -25,10 +25,19 @@ jobs:
           cd Project
           npm ci --build-from-source
 
+      - name: Seed database
+        run: |
+          cd Project
+          npm run seed
+
       - name: Run security tests
         run: |
           cd Project
           npm run security_test
+
+      - name: Run Prometheus rule tests
+        run: |
+          npm run prometheus_rule_test
 
       - name: Upload test results
         if: always()

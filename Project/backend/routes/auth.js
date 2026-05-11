@@ -1,6 +1,7 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const { db, logsDb } = require("../db");
+const { recordLoginAttempt } = require("../metrics");
 
 const router = express.Router();
 
@@ -49,17 +50,25 @@ router.post("/login", (req, res) => {
         async (err, user) => {
 
             if (!user) {
+                recordLoginAttempt("user_not_found");
                 return res.status(401).send("User not found");
             }
 
             const valid = await bcrypt.compare(password, user.password_hash);
 
             if (!valid) {
+                recordLoginAttempt("invalid_password");
                 return res.status(401).send("Invalid password");
             }
 
             writeAuditLog(user, () => {
-                res.json(user);
+                recordLoginAttempt("success");
+                res.json({
+                    user_id: user.user_id,
+                    name: user.name,
+                    email: user.email,
+                    role: user.role
+                });
             });
         }
     );

@@ -1,5 +1,6 @@
 const express = require("express");
 const { db } = require("../db");
+const { recordAppointmentCreated } = require("../metrics");
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.post("/", (req, res) => {
                 return res.status(400).json(err);
             }
 
+            recordAppointmentCreated();
             res.json({ appointment_id: this.lastID });
         }
     );

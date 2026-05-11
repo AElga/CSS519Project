@@ -1,0 +1,95 @@
+groups:
+  - name: elghealth_recording_rules
+    interval: 30s
+    rules:
+      - record: elghealth:http_requests:rate5m
+        expr: sum by (route, method, status) (rate(elghealth_http_requests_total[5m]))
+
+      - record: elghealth:http_request_errors:rate5m
+        expr: sum by (route, method) (rate(elghealth_http_requests_total{status=~"5.."}[5m]))
+
+      - record: elghealth:http_request_failures:rate5m
+        expr: sum by (route, method, status) (rate(elghealth_http_requests_total{status=~"4..|5.."}[5m]))
+
+      - record: elghealth:http_request_latency:p95_5m
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, route, method) (
+              rate(elghealth_http_request_duration_seconds_bucket[5m])
+            )
+          )
+
+      - record: elghealth:login_attempts:rate5m
+        expr: sum by (outcome) (rate(elghealth_login_attempts_total[5m]))
+
+      - record: elghealth:appointments_created:increase15m
+        expr: increase(elghealth_appointments_created_total[15m])
+
+  - name: elghealth_alert_rules
+    interval: 30s
+    rules:
+      - alert: ElgHealthBackendDown
+        expr: up{job="elghealth-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: ElgHealth backend is down
+          description: Prometheus has been unable to scrape the ElgHealth backend metrics endpoint for more than 1 minute.
+
+      - alert: ElgHealthHighApiLatency
+        expr: elghealth:http_request_latency:p95_5m{route!="/metrics"} > 0.75
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+          category: performance
+        annotations:
+          summary: ElgHealth API latency is elevated
+          description: The p95 latency for route {{ $labels.route }} {{ $labels.method }} has been above 750ms for 5 minutes.
+
+      - alert: ElgHealthApiErrorsHigh
+        expr: |
+          (
+            sum(rate(elghealth_http_requests_total{status=~"5.."}[5m]))
+            /
+            clamp_min(sum(rate(elghealth_http_requests_total[5m])), 0.001)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: ElgHealth API error ratio is elevated
+          description: More than 5% of API responses have been 5xx for 5 minutes.
+
+      - alert: ElgHealthLoginFailuresElevated
+        expr: |
+          (
+            sum(rate(elghealth_login_attempts_total{outcome=~"invalid_password|user_not_found"}[5m]))
+            /
+            clamp_min(sum(rate(elghealth_login_attempts_total[5m])), 0.001)
+          ) > 0.5
+          and
+          sum(rate(elghealth_login_attempts_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          service: auth
+          category: security
+        annotations:
+          summary: ElgHealth login failures are elevated
+          description: More than half of login attempts have failed for 10 minutes, which may indicate an auth issue or abuse.
+
+      - alert: ElgHealthMemoryUsageHigh
+        expr: elghealth_process_resident_memory_bytes > 250000000
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+          category: performance
+        annotations:
+          summary: ElgHealth backend memory usage is high
+          description: The backend process has used more than 250 MB of resident memory for 10 minutes.

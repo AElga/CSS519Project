@@ -1,8 +1,5 @@
-const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
-
-const dbPath = process.env.DB_PATH || path.join(__dirname, "elghealth.db");
-const logsDbPath = process.env.LOGS_DB_PATH || path.join(__dirname, "logs.db");
+const { dbPath, logsDbPath } = require("./paths");
 const db = new sqlite3.Database(dbPath);
 const logsDb = new sqlite3.Database(logsDbPath);
 

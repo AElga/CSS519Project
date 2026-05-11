@@ -1,8 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const sqlite3 = require("sqlite3").verbose();
-
-const dbPath = process.env.DB_PATH || path.join(__dirname, "elghealth.db");
+const { dbPath } = require("./paths");
 const schemaPath = path.join(__dirname, "schema.sql");
 
 if (fs.existsSync(dbPath)) {
