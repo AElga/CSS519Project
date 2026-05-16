@@ -26,6 +26,12 @@ groups:
       - record: elghealth:appointments_created:increase15m
         expr: increase(elghealth_appointments_created_total[15m])
 
+      - record: elghealth:container_cpu:rate5m
+        expr: sum by (container_label_com_docker_compose_service) (rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service!=""}[5m]))
+
+      - record: elghealth:container_memory_bytes
+        expr: sum by (container_label_com_docker_compose_service) (container_memory_usage_bytes{container_label_com_docker_compose_service!=""})
+
   - name: elghealth_alert_rules
     interval: 30s
     rules:
@@ -93,3 +99,24 @@ groups:
         annotations:
           summary: ElgHealth backend memory usage is high
           description: The backend process has used more than 250 MB of resident memory for 10 minutes.
+
+      - alert: ElgHealthFrontendDown
+        expr: probe_success{instance="http://frontend/health"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: frontend
+        annotations:
+          summary: ElgHealth frontend is down
+          description: The frontend health endpoint has failed blackbox probes for more than 1 minute.
+
+      - alert: ElgHealthContainerCpuHigh
+        expr: sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service="backend"}[5m])) > 0.75
+        for: 10m
+        labels:
+          severity: warning
+          service: backend
+          category: performance
+        annotations:
+          summary: ElgHealth backend container CPU is high
+          description: Backend container CPU usage has exceeded 0.75 CPU-seconds per second for 10 minutes.

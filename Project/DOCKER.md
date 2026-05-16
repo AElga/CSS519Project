@@ -1,30 +1,61 @@
 # Docker Setup
 
-This project now includes a two-container Docker setup:
+The root `docker-compose.yml` now brings up the application and the observability stack together:
 
 - `backend`: Node.js + Express API on port `3000`
-- `frontend`: Nginx serving the static UI on port `8080`
+- `frontend`: Nginx UI on port `8080`
+- `traffic-simulator`: generates steady API, DB, log, and UI telemetry
+- `prometheus`: metrics store on port `9090`
+- `grafana`: dashboards on port `3002`
+- `loki`: log store on port `3100`
+- `promtail`: ships structured backend logs into Loki
+- `cadvisor`: Docker container metrics on port `8081`
+- `blackbox-exporter`: frontend/backend uptime probes on port `9115`
+- `uptime-kuma`: additional uptime dashboard on port `3001`
 
-## Start the app
+## Start the stack
 
 ```bash
 docker compose up --build
 ```
 
-## Open the app
+## Dashboard URLs
 
-- Frontend: `http://localhost:8080`
-- Backend health check: `http://localhost:3000/health`
+- App UI: `http://localhost:8080`
+- Backend health: `http://localhost:3000/health`
+- Prometheus: `http://localhost:9090`
+- Grafana: `http://localhost:3002`
+- Uptime Kuma: `http://localhost:3001`
+- cAdvisor: `http://localhost:8081`
 
-## Stop the app
+Grafana default credentials:
+
+- Username: `admin`
+- Password: `admin`
+
+The preprovisioned Grafana dashboard is `ElgHealth Observability`.
+
+## What updates live
+
+The simulator starts automatically and continuously triggers:
+
+- successful and failed login attempts
+- appointment creation and appointment reads
+- frontend reachability checks
+- UI interaction telemetry
+- backend summary and metrics scrapes
+
+That means the dashboards update live with API traffic, DB operations, audit/app logs, and container metrics without needing manual clicks.
+
+## Stop the stack
 
 ```bash
 docker compose down
 ```
 
-## Reset the SQLite volume
+## Reset persistent data
 
-The backend uses a named Docker volume called `sqlite_data`. To remove the stored database and recreate it from `backend/schema.sql` on next startup:
+The application database and observability stores use named Docker volumes. To reset everything:
 
 ```bash
 docker compose down -v

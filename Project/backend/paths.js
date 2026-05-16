@@ -15,5 +15,6 @@ function getDataPath(fileName) {
 
 module.exports = {
     dbPath: process.env.DB_PATH || getDataPath("elghealth.db"),
-    logsDbPath: process.env.LOGS_DB_PATH || getDataPath("logs.db")
+    logsDbPath: process.env.LOGS_DB_PATH || getDataPath("logs.db"),
+    appLogPath: process.env.APP_LOG_PATH || getDataPath("app.log")
 };

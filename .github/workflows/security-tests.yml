@@ -39,6 +39,10 @@ jobs:
         run: |
           npm run prometheus_rule_test
 
+      - name: Run dashboard configuration tests
+        run: |
+          npm run dashboard_config_test
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
