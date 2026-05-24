@@ -30,8 +30,8 @@ docker compose up --build
 
 Grafana default credentials:
 
-- Username: `admin`
-- Password: `admin`
+- Username: `adminElgHealth`
+- Password: `SecurePasswordElg123`
 
 The preprovisioned Grafana dashboard is `ElgHealth Observability`.
 
@@ -61,3 +61,17 @@ The application database and observability stores use named Docker volumes. To r
 docker compose down -v
 docker compose up --build
 ```
+
+## Refresh seeded application data
+
+The backend SQLite data is stored in the named `sqlite_data` volume, so it remains available even while containers are offline or stopped with `docker compose down`.
+
+If you want to reset only the application database back to the seeded mock data:
+
+```bash
+docker compose down
+docker volume rm css519project_sqlite_data
+docker compose up --build
+```
+
+Mock account credentials are listed in `Project/mock-accounts.txt`.

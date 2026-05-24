@@ -239,11 +239,13 @@ async function getDynamicState() {
     const [
         usersCount,
         appointmentsCount,
+        archivedAppointmentsCount,
         recordsCount,
         auditLogsCount
     ] = await Promise.all([
         querySingleValue(db, "SELECT COUNT(*) FROM users"),
         querySingleValue(db, "SELECT COUNT(*) FROM appointments"),
+        querySingleValue(db, "SELECT COUNT(*) FROM archived_appointments"),
         querySingleValue(db, "SELECT COUNT(*) FROM records"),
         querySingleValue(logsDb, "SELECT COUNT(*) FROM audit_logs")
     ]);
@@ -251,6 +253,7 @@ async function getDynamicState() {
     return {
         usersCount,
         appointmentsCount,
+        archivedAppointmentsCount,
         recordsCount,
         auditLogsCount
     };
@@ -356,6 +359,7 @@ async function getMetricsSnapshot() {
         [
             { labels: { table: "users" }, value: dynamicState.usersCount },
             { labels: { table: "appointments" }, value: dynamicState.appointmentsCount },
+            { labels: { table: "archived_appointments" }, value: dynamicState.archivedAppointmentsCount },
             { labels: { table: "records" }, value: dynamicState.recordsCount },
             { labels: { table: "audit_logs" }, value: dynamicState.auditLogsCount }
         ]
@@ -400,6 +404,7 @@ async function getLiveSummary() {
         rows: {
             users: dynamicState.usersCount,
             appointments: dynamicState.appointmentsCount,
+            archived_appointments: dynamicState.archivedAppointmentsCount,
             records: dynamicState.recordsCount,
             audit_logs: dynamicState.auditLogsCount
         }

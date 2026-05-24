@@ -80,9 +80,9 @@ tests:
   - name: request-error-alert-rule
     interval: 1m
     input_series:
-      - series: 'elghealth_http_requests_total{route="/appointments/:user_id",method="GET",status="500"}'
+      - series: 'elghealth_http_requests_total{route="/appointments/user/:user_id",method="GET",status="500"}'
         values: '0 2 4 6 8 10 12 14 16 18 20'
-      - series: 'elghealth_http_requests_total{route="/appointments/:user_id",method="GET",status="200"}'
+      - series: 'elghealth_http_requests_total{route="/appointments/user/:user_id",method="GET",status="200"}'
         values: '0 2 4 6 8 10 12 14 16 18 20'
     alert_rule_test:
       - eval_time: 10m

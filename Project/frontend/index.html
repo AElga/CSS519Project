@@ -1,3 +1,52 @@
-<h1>ElgHealth</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElgHealth Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-shell">
+    <main class="auth-layout">
+        <section class="brand-panel">
+            <p class="eyebrow">ElgHealth Care Portal</p>
+            <h1>Connected hospital scheduling with a clearer clinical view.</h1>
+            <p class="supporting-copy">
+                Sign in to review appointments, open visit details, and see the latest notes tied to patient care.
+            </p>
+            <div class="brand-panel__badge-row">
+                <span class="info-chip">Patient access</span>
+                <span class="info-chip">Doctor access</span>
+                <span class="info-chip">Clinical notes</span>
+            </div>
+        </section>
 
-<a href="login.html">Login</a>
+        <section class="auth-card">
+            <div>
+                <p class="eyebrow">Secure Sign In</p>
+                <h2>Welcome back</h2>
+            </div>
+
+            <label class="field">
+                <span>Email</span>
+                <input id="email" type="email" placeholder="you@example.com">
+            </label>
+
+            <label class="field">
+                <span>Password</span>
+                <input id="password" type="password" placeholder="Enter your password">
+            </label>
+
+            <p id="login-error" class="feedback feedback--error" aria-live="polite"></p>
+
+            <button class="primary-button" onclick="login()">Sign In</button>
+
+            <p class="helper-copy">
+                Demo accounts can be seeded from the backend for both patient and doctor views.
+            </p>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

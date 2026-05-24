@@ -6,6 +6,7 @@ const { spawnSync } = require("child_process");
 const prometheusDir = __dirname;
 const testFilePath = path.join(prometheusDir, "rules.test.yml");
 const dockerImage = "prom/prometheus:v3.7.1";
+const tempRootDir = fs.mkdtempSync(path.join(os.tmpdir(), "elghealth-promtool-"));
 
 function getNamedTestBlocks(fileContents) {
     const lines = fileContents.split(/\r?\n/);
@@ -57,7 +58,7 @@ function runPromtoolForTest(tempFileName) {
         "--entrypoint",
         "promtool",
         "-v",
-        `${prometheusDir}:/work`,
+        `${tempRootDir}:/work`,
         dockerImage,
         "test",
         "rules",
@@ -97,7 +98,7 @@ function main() {
 
     for (const [index, testBlock] of testBlocks.entries()) {
         const tempFileName = `rules.test.${index + 1}.yml`;
-        const tempFilePath = path.join(prometheusDir, tempFileName);
+        const tempFilePath = path.join(tempRootDir, tempFileName);
 
         fs.writeFileSync(tempFilePath, `${testBlock.contents}\n`);
 
@@ -125,6 +126,8 @@ function main() {
 
         fs.unlinkSync(tempFilePath);
     }
+
+    fs.rmSync(tempRootDir, { recursive: true, force: true });
 
     console.log(`Summary: ${passed} passed, ${failed} failed, ${testBlocks.length} total.`);
 

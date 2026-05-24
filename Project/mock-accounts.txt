@@ -1,0 +1,15 @@
+ElgHealth Mock Accounts
+=======================
+
+All mock accounts use the same password unless noted otherwise.
+Password: Password123!
+
+Patients
+- Avery Stone | patient@example.com | Password123!
+- Jordan Miles | patient2@example.com | Password123!
+- Priya Shah | patient3@example.com | Password123!
+
+Doctors
+- Dr. Emma Smith | doctor@example.com | Password123!
+- Dr. Daniel Chen | doctor2@example.com | Password123!
+- Dr. Sofia Garcia | doctor3@example.com | Password123!

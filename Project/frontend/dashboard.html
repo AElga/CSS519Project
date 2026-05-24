@@ -1,16 +1,114 @@
-<h2>Dashboard</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElgHealth Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-shell">
+    <main class="dashboard-layout">
+        <section class="dashboard-hero">
+            <div>
+                <p class="eyebrow">Hospital Dashboard</p>
+                <h1 id="user-name">User</h1>
+                <p class="dashboard-role">
+                    <span id="user-role">Role</span>
+                    <span class="dashboard-role__divider"></span>
+                    <span id="dashboard-subtitle">Loading your workspace...</span>
+                </p>
+            </div>
 
-<input id="doctor" placeholder="doctor id">
-<input id="time" placeholder="appointment time">
+            <button class="secondary-button" onclick="logout()">Log Out</button>
+        </section>
 
-<button onclick="schedule()">Schedule Appointment</button>
+        <section id="schedule-panel" class="panel panel--soft" hidden>
+            <div class="panel__header">
+                <div>
+                    <p class="eyebrow">Patient Scheduling</p>
+                    <h2>Request a new appointment</h2>
+                </div>
+            </div>
 
-<h3>Live System Summary</h3>
+            <div class="schedule-grid">
+                <label class="field">
+                    <span>Doctor ID</span>
+                    <input id="doctor" placeholder="Enter doctor ID">
+                </label>
 
-<ul id="live-summary"></ul>
+                <label class="field">
+                    <span>Appointment Time</span>
+                    <input id="time" type="datetime-local">
+                </label>
+            </div>
 
-<h3>Appointments</h3>
+            <p id="schedule-feedback" class="feedback" aria-live="polite"></p>
 
-<ul id="appointments"></ul>
+            <button class="primary-button" onclick="schedule()">Schedule Appointment</button>
+        </section>
 
-<script src="app.js"></script>
+        <section class="dashboard-grid">
+            <section class="panel">
+                <div class="panel__header">
+                    <div>
+                        <p class="eyebrow">Appointments</p>
+                        <h2 id="appointments-heading">Your appointments</h2>
+                    </div>
+                </div>
+
+                <div class="tab-row">
+                    <button id="tab-active" class="tab-button is-active" type="button" onclick="switchAppointmentsTab('active')">
+                        Active
+                        <span id="tab-count-active" class="tab-count">0</span>
+                    </button>
+                    <button id="tab-archived" class="tab-button" type="button" onclick="switchAppointmentsTab('archived')">
+                        Archived
+                        <span id="tab-count-archived" class="tab-count">0</span>
+                    </button>
+                </div>
+
+                <div id="appointments-empty" class="empty-state" hidden>
+                    No appointments are available.
+                </div>
+                <div id="appointments" class="appointment-list"></div>
+            </section>
+
+            <section class="panel panel--details">
+                <div id="details-empty" class="empty-state">
+                    Select an appointment to review its lab results and notes.
+                </div>
+
+                <div id="appointment-details" hidden>
+                    <div class="panel__header">
+                        <div>
+                            <p class="eyebrow">Appointment Detail</p>
+                            <h2 id="details-title">Appointment</h2>
+                            <p id="details-source" class="detail-source">Active appointment</p>
+                        </div>
+                        <p id="details-status" class="status-pill">Status</p>
+                    </div>
+
+                    <div class="detail-grid">
+                        <div class="detail-card">
+                            <span class="detail-card__label">Patient</span>
+                            <span id="details-patient" class="detail-card__value"></span>
+                        </div>
+                        <div class="detail-card">
+                            <span class="detail-card__label">Doctor</span>
+                            <span id="details-doctor" class="detail-card__value"></span>
+                        </div>
+                    </div>
+
+                    <div class="records-section">
+                        <p class="eyebrow">Clinical Notes</p>
+                        <h3>Lab results and visit notes</h3>
+                        <div id="records-list" class="records-list"></div>
+                    </div>
+                </div>
+            </section>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
