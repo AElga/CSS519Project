@@ -8,6 +8,8 @@ services:
       DB_PATH: /data/elghealth.db
       LOGS_DB_PATH: /data/logs.db
       APP_LOG_PATH: /data/app.log
+      JWT_SECRET: docker-compose-dev-secret
+      ALLOWED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
     volumes:
       - sqlite_data:/data
     ports:

@@ -13,6 +13,12 @@ The root `docker-compose.yml` now brings up the application and the observabilit
 - `blackbox-exporter`: frontend/backend uptime probes on port `9115`
 - `uptime-kuma`: additional uptime dashboard on port `3001`
 
+The Docker stack now also injects the backend security settings needed by the updated compliance controls:
+
+- `JWT_SECRET` is set for the backend container so signed sessions work inside Compose.
+- `ALLOWED_ORIGINS` is set to the published frontend URLs on `localhost:8080` and `127.0.0.1:8080`.
+- `traffic-simulator` authenticates before reading or creating appointments, so observability traffic still works with the protected routes.
+
 ## Start the stack
 
 ```bash

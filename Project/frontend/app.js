@@ -14,18 +14,29 @@ let selectedAppointment = {
 };
 
 function getStoredUser() {
-    const raw = localStorage.getItem("user");
+    const raw = sessionStorage.getItem("session");
     return raw ? JSON.parse(raw) : null;
 }
 
-function setStoredUser(user) {
-    currentUser = user;
-    localStorage.setItem("user", JSON.stringify(user));
+function setStoredUser(session) {
+    currentUser = session;
+    sessionStorage.setItem("session", JSON.stringify(session));
 }
 
 function clearStoredUser() {
     currentUser = null;
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("session");
+}
+
+function getAuthHeaders(extraHeaders = {}) {
+    const session = getStoredUser();
+    const headers = { ...extraHeaders };
+
+    if (session && session.token) {
+        headers.Authorization = `Bearer ${session.token}`;
+    }
+
+    return headers;
 }
 
 async function postUiEvent(surface, event, metadata = {}) {
@@ -76,7 +87,7 @@ function getEmptyTabMessage(scope) {
         return "No archived appointments are available yet.";
     }
 
-    return currentUser && currentUser.role === "doctor"
+    return currentUser && currentUser.user.role === "doctor"
         ? "No active patient appointments are assigned to you yet."
         : "You do not have any active appointments yet.";
 }
@@ -111,10 +122,10 @@ async function login() {
         return;
     }
 
-    const user = await res.json();
-    setStoredUser(user);
+    const session = await res.json();
+    setStoredUser(session);
 
-    await postUiEvent("login", "login_success", { email, role: user.role });
+    await postUiEvent("login", "login_success", { email, role: session.user.role });
     window.location = "dashboard.html";
 }
 
@@ -122,7 +133,8 @@ async function schedule() {
     const doctorInput = document.getElementById("doctor");
     const timeInput = document.getElementById("time");
     const feedbackElement = document.getElementById("schedule-feedback");
-    const user = getStoredUser();
+    const session = getStoredUser();
+    const user = session ? session.user : null;
 
     if (!user || user.role !== "patient") {
         return;
@@ -142,7 +154,7 @@ async function schedule() {
 
     const response = await fetch(`${API}/appointments`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
             patient_id: user.user_id,
             doctor_id: doctor,
@@ -177,13 +189,16 @@ async function schedule() {
 }
 
 async function fetchAppointments(scope) {
-    const user = getStoredUser();
+    const session = getStoredUser();
+    const user = session ? session.user : null;
 
     if (!user) {
         return [];
     }
 
-    const res = await fetch(`${API}/appointments/user/${user.user_id}?scope=${scope}`);
+    const res = await fetch(`${API}/appointments/user/${user.user_id}?scope=${scope}`, {
+        headers: getAuthHeaders()
+    });
 
     if (!res.ok) {
         throw new Error(`Failed to load ${scope} appointments`);
@@ -279,7 +294,7 @@ function renderAppointments() {
 
     appointments.forEach((appointment) => {
         const button = document.createElement("button");
-        const counterpartLabel = currentUser.role === "doctor"
+        const counterpartLabel = currentUser.user.role === "doctor"
             ? `Patient: ${appointment.patient_name}`
             : `Doctor: ${appointment.doctor_name}`;
 
@@ -306,7 +321,8 @@ function renderAppointments() {
 }
 
 async function selectAppointment(appointmentId, scope, shouldTrack = true) {
-    const user = getStoredUser();
+    const session = getStoredUser();
+    const user = session ? session.user : null;
 
     if (!user || !appointmentId) {
         return;
@@ -328,7 +344,10 @@ async function selectAppointment(appointmentId, scope, shouldTrack = true) {
     }
 
     const res = await fetch(
-        `${API}/appointments/${appointmentId}/details?user_id=${user.user_id}&scope=${scope}`
+        `${API}/appointments/${appointmentId}/details?scope=${scope}`,
+        {
+            headers: getAuthHeaders()
+        }
     );
 
     if (!res.ok) {
@@ -415,7 +434,8 @@ function switchAppointmentsTab(scope) {
 }
 
 function hydrateDashboardShell() {
-    const user = getStoredUser();
+    const session = getStoredUser();
+    const user = session ? session.user : null;
 
     if (!user) {
         window.location = "login.html";
@@ -449,6 +469,11 @@ function hydrateDashboardShell() {
     if (schedulePanel) {
         schedulePanel.hidden = user.role !== "patient";
     }
+
+    const exportButton = document.getElementById("export-records-button");
+    if (exportButton) {
+        exportButton.hidden = user.role !== "patient";
+    }
 }
 
 async function initializeDashboard() {
@@ -473,10 +498,44 @@ function logout() {
     window.location = "login.html";
 }
 
+async function exportRecords() {
+    const feedbackElement = document.getElementById("export-feedback");
+
+    if (feedbackElement) {
+        feedbackElement.textContent = "";
+    }
+
+    const response = await fetch(`${API}/appointments/records/export/me`, {
+        headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+        if (feedbackElement) {
+            feedbackElement.textContent = "We could not export your records right now.";
+        }
+        return;
+    }
+
+    const payload = await response.json();
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = downloadUrl;
+    link.download = "elghealth-record-export.json";
+    link.click();
+    URL.revokeObjectURL(downloadUrl);
+
+    if (feedbackElement) {
+        feedbackElement.textContent = "Your record export has been downloaded.";
+    }
+}
+
 window.login = login;
 window.schedule = schedule;
 window.logout = logout;
 window.switchAppointmentsTab = switchAppointmentsTab;
+window.exportRecords = exportRecords;
 
 window.addEventListener("load", async () => {
     const page = window.location.pathname.split("/").pop() || "index.html";
@@ -484,7 +543,7 @@ window.addEventListener("load", async () => {
 
     await postUiEvent("page", "page_view", {
         page,
-        user_role: currentUser ? currentUser.role : "guest"
+        user_role: currentUser ? currentUser.user.role : "guest"
     });
 
     if (page === "dashboard.html") {

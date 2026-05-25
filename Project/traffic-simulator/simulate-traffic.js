@@ -93,17 +93,27 @@ async function waitForService(url, label) {
     }
 }
 
-async function postJson(url, payload) {
+async function requestJson(url, options = {}) {
     const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        ...options,
+        headers: options.headers || {}
     });
 
     return {
         response,
         body: await response.text()
     };
+}
+
+async function postJson(url, payload, headers = {}) {
+    return requestJson(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            ...headers
+        },
+        body: JSON.stringify(payload)
+    });
 }
 
 async function loginUser(email, password) {
@@ -116,7 +126,18 @@ async function loginUser(email, password) {
         throw new Error(`Expected successful login for ${email}, received ${response.response.status}: ${response.body}`);
     }
 
-    return JSON.parse(response.body);
+    const session = JSON.parse(response.body);
+
+    return {
+        token: session.token,
+        user: session.user
+    };
+}
+
+function getAuthHeaders(session) {
+    return {
+        Authorization: `Bearer ${session.token}`
+    };
 }
 
 async function sendUiEvent(event, metadata = {}) {
@@ -144,16 +165,20 @@ async function runCycle(cycle, profile) {
 
     const patient = await loginUser(pair.patientEmail, "Password123!");
     const doctor = await loginUser(pair.doctorEmail, "Password123!");
-    const activeAppointments = await fetch(
-        `${backendBaseUrl}/appointments/user/${patient.user_id}?scope=active`
-    ).then((response) => response.json());
+    const activeAppointmentsResponse = await requestJson(
+        `${backendBaseUrl}/appointments/user/${patient.user.user_id}?scope=active`,
+        {
+            headers: getAuthHeaders(patient)
+        }
+    );
+    const activeAppointments = JSON.parse(activeAppointmentsResponse.body);
     const matchingActiveAppointments = activeAppointments.filter(
-        (appointment) => appointment.doctor_id === doctor.user_id
+        (appointment) => appointment.doctor_id === doctor.user.user_id
     );
 
     await sendUiEvent("dashboard_viewed", {
         cycle,
-        user_id: patient.user_id,
+        user_id: patient.user.user_id,
         active_appointments: matchingActiveAppointments.length,
         traffic_profile: profile.label
     });
@@ -163,37 +188,45 @@ async function runCycle(cycle, profile) {
             Date.now() + randomBetween(20, 240) * 60000
         ).toISOString();
 
-        await postJson(`${backendBaseUrl}/appointments`, {
-            patient_id: patient.user_id,
-            doctor_id: doctor.user_id,
-            appointment_time: appointmentTime
-        });
+        await postJson(
+            `${backendBaseUrl}/appointments`,
+            {
+                patient_id: patient.user.user_id,
+                doctor_id: doctor.user.user_id,
+                appointment_time: appointmentTime
+            },
+            getAuthHeaders(patient)
+        );
 
         await sendUiEvent("simulated_appointment_created", {
             cycle,
-            patient_id: patient.user_id,
-            doctor_id: doctor.user_id,
+            patient_id: patient.user.user_id,
+            doctor_id: doctor.user.user_id,
             appointment_time: appointmentTime,
             traffic_profile: profile.label
         });
     } else {
         await sendUiEvent("appointment_cap_reached", {
             cycle,
-            patient_id: patient.user_id,
-            doctor_id: doctor.user_id,
+            patient_id: patient.user.user_id,
+            doctor_id: doctor.user.user_id,
             traffic_profile: profile.label
         });
     }
 
-    await fetch(`${backendBaseUrl}/appointments/user/${patient.user_id}?scope=active`);
-    await fetch(`${backendBaseUrl}/appointments/user/${patient.user_id}?scope=archived`);
+    await fetch(`${backendBaseUrl}/appointments/user/${patient.user.user_id}?scope=active`, {
+        headers: getAuthHeaders(patient)
+    });
+    await fetch(`${backendBaseUrl}/appointments/user/${patient.user.user_id}?scope=archived`, {
+        headers: getAuthHeaders(patient)
+    });
     await fetch(`${backendBaseUrl}/observability/summary`);
     await fetch(`${backendBaseUrl}/metrics`);
     await fetch(`${backendBaseUrl}/health`);
     await sendUiEvent("cycle_completed", {
         cycle,
-        patient_id: patient.user_id,
-        doctor_id: doctor.user_id,
+        patient_id: patient.user.user_id,
+        doctor_id: doctor.user.user_id,
         traffic_profile: profile.label
     });
 }

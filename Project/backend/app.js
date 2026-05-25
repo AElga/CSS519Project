@@ -6,10 +6,36 @@ const appointmentRoutes = require("./routes/appointments");
 const observabilityRoutes = require("./routes/observability");
 const { metricsMiddleware, getMetricsSnapshot, getLiveSummary } = require("./metrics");
 const { logEvent } = require("./logger");
+const { getJwtSecret } = require("./auth-utils");
 
 const app = express();
 
-app.use(cors());
+const defaultAllowedOrigins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080"
+];
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || defaultAllowedOrigins.join(","))
+    .split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+if (process.env.NODE_ENV === "production" && getJwtSecret() === "dev-only-insecure-secret") {
+    throw new Error("JWT_SECRET must be configured in production");
+}
+
+app.use(cors({
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error("Origin not allowed by CORS policy"));
+    }
+}));
 app.use(express.json());
 app.use(metricsMiddleware);
 

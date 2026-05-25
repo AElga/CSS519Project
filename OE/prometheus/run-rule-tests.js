@@ -5,6 +5,7 @@ const { spawnSync } = require("child_process");
 
 const prometheusDir = __dirname;
 const testFilePath = path.join(prometheusDir, "rules.test.yml");
+const ruleFilePath = path.join(prometheusDir, "rules.yml");
 const dockerImage = "prom/prometheus:v3.7.1";
 const tempRootDir = fs.mkdtempSync(path.join(os.tmpdir(), "elghealth-promtool-"));
 
@@ -81,6 +82,7 @@ function indentBlock(text) {
 
 function main() {
     const fileContents = fs.readFileSync(testFilePath, "utf8");
+    fs.copyFileSync(ruleFilePath, path.join(tempRootDir, "rules.yml"));
     const { testBlocks } = getNamedTestBlocks(fileContents);
 
     if (testBlocks.length === 0) {
@@ -105,14 +107,18 @@ function main() {
         console.log(`[RUN ] ${testBlock.name}`);
         const result = runPromtoolForTest(tempFileName);
 
-        if (result.status === 0) {
+        if (!result.error && result.status === 0) {
             passed += 1;
             console.log(`[PASS] ${testBlock.name}\n`);
         } else {
             failed += 1;
             console.log(`[FAIL] ${testBlock.name}`);
 
-            const combinedOutput = [result.stdout, result.stderr]
+            const combinedOutput = [
+                result.error ? result.error.message : "",
+                result.stdout,
+                result.stderr
+            ]
                 .filter(Boolean)
                 .join("\n")
                 .trim();

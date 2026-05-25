@@ -92,7 +92,7 @@ async function runSecurityTests() {
 
         const { port } = server.address();
         const baseUrl = `http://127.0.0.1:${port}`;
-        let validLogin;
+        let validLoginSession;
 
         await runTest("S-2: Invalid Login", async () => {
             const invalidLogin = await postJson(`${baseUrl}/auth/login`, {
@@ -108,14 +108,14 @@ async function runSecurityTests() {
         }, failures);
 
         await runTest("R-1: Audit Logging", async () => {
-            validLogin = await postJson(`${baseUrl}/auth/login`, {
+            validLoginSession = await postJson(`${baseUrl}/auth/login`, {
                 email: seededUser.email,
                 password: "Password123!"
             });
 
-            if (validLogin.response.status !== 200) {
+            if (validLoginSession.response.status !== 200) {
                 throw new Error(
-                    `R-1 setup failed: expected 200 login, got ${validLogin.response.status}`
+                    `R-1 setup failed: expected 200 login, got ${validLoginSession.response.status}`
                 );
             }
 
@@ -149,11 +149,19 @@ async function runSecurityTests() {
         }, failures);
 
         await runTest("S-8: Login Response Does Not Expose Password Hash", async () => {
-            if (!validLogin || validLogin.response.status !== 200) {
+            if (!validLoginSession || validLoginSession.response.status !== 200) {
                 throw new Error("S-8 setup failed: valid login response was not available.");
             }
 
-            if (Object.prototype.hasOwnProperty.call(validLogin.payload, "password_hash")) {
+            if (!validLoginSession.payload.token) {
+                throw new Error("S-8 failed: login response did not include an auth token.");
+            }
+
+            if (!validLoginSession.payload.user) {
+                throw new Error("S-8 failed: login response did not include user details.");
+            }
+
+            if (Object.prototype.hasOwnProperty.call(validLoginSession.payload.user, "password_hash")) {
                 throw new Error("S-8 failed: login response exposed password_hash.");
             }
         }, failures);

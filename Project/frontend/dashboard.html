@@ -47,6 +47,21 @@
             <button class="primary-button" onclick="schedule()">Schedule Appointment</button>
         </section>
 
+        <section id="export-records-button" class="panel panel--soft" hidden>
+            <div class="panel__header">
+                <div>
+                    <p class="eyebrow">Patient Access</p>
+                    <h2>Download your health record summary</h2>
+                </div>
+            </div>
+
+            <p class="supporting-copy">
+                Export your appointments and clinical notes in a portable JSON file.
+            </p>
+            <p id="export-feedback" class="feedback" aria-live="polite"></p>
+            <button class="secondary-button" onclick="exportRecords()">Export My Records</button>
+        </section>
+
         <section class="dashboard-grid">
             <section class="panel">
                 <div class="panel__header">

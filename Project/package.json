@@ -8,7 +8,8 @@
     "seed": "node backend/init-db.js && node backend/seed.js",
     "reset_db": "node backend/reset-db.js",
     "refresh_db": "node backend/reset-db.js && node backend/init-db.js && node backend/seed.js",
-    "security_test": "node backend/security_test.js"
+    "security_test": "node backend/security_test.js",
+    "compliance_test": "node backend/compliance_test.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",

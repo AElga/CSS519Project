@@ -9,6 +9,7 @@
     "reset_db": "node Project/backend/reset-db.js",
     "refresh_db": "node Project/backend/reset-db.js && node Project/backend/init-db.js && node Project/backend/seed.js",
     "security_test": "node Project/backend/security_test.js",
+    "compliance_test": "node Project/backend/compliance_test.js",
     "prometheus_rule_test": "node OE/prometheus/run-rule-tests.js",
     "dashboard_config_test": "node OE/run-dashboard-tests.js"
   },

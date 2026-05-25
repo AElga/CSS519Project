@@ -9,6 +9,9 @@ on:
 jobs:
   security-tests:
     runs-on: ubuntu-latest
+    env:
+      JWT_SECRET: ci-test-secret
+      ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
 
     steps:
       - uses: actions/checkout@v3
@@ -18,30 +21,28 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: 'Project/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
-        run: |
-          cd Project
-          npm ci --build-from-source
+        run: npm ci
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config
 
       - name: Seed database
-        run: |
-          cd Project
-          npm run seed
+        run: npm run seed
 
       - name: Run security tests
-        run: |
-          cd Project
-          npm run security_test
+        run: npm run security_test
+
+      - name: Run compliance tests
+        run: npm run compliance_test
 
       - name: Run Prometheus rule tests
-        run: |
-          npm run prometheus_rule_test
+        run: npm run prometheus_rule_test
 
       - name: Run dashboard configuration tests
-        run: |
-          npm run dashboard_config_test
+        run: npm run dashboard_config_test
 
       - name: Upload test results
         if: always()
@@ -49,3 +50,4 @@ jobs:
         with:
           name: test-results
           path: Project/test-results/
+          if-no-files-found: ignore
