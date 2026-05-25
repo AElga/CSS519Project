@@ -9,6 +9,8 @@ const ruleFilePath = path.join(prometheusDir, "rules.yml");
 const dockerImage = "prom/prometheus:v3.7.1";
 const tempRootDir = fs.mkdtempSync(path.join(os.tmpdir(), "elghealth-promtool-"));
 
+fs.chmodSync(tempRootDir, 0o755);
+
 function getNamedTestBlocks(fileContents) {
     const lines = fileContents.split(/\r?\n/);
     const testsIndex = lines.findIndex((line) => line.trim() === "tests:");
@@ -82,7 +84,10 @@ function indentBlock(text) {
 
 function main() {
     const fileContents = fs.readFileSync(testFilePath, "utf8");
-    fs.copyFileSync(ruleFilePath, path.join(tempRootDir, "rules.yml"));
+    const tempRuleFilePath = path.join(tempRootDir, "rules.yml");
+
+    fs.copyFileSync(ruleFilePath, tempRuleFilePath);
+    fs.chmodSync(tempRuleFilePath, 0o644);
     const { testBlocks } = getNamedTestBlocks(fileContents);
 
     if (testBlocks.length === 0) {
@@ -103,6 +108,7 @@ function main() {
         const tempFilePath = path.join(tempRootDir, tempFileName);
 
         fs.writeFileSync(tempFilePath, `${testBlock.contents}\n`);
+        fs.chmodSync(tempFilePath, 0o644);
 
         console.log(`[RUN ] ${testBlock.name}`);
         const result = runPromtoolForTest(tempFileName);
