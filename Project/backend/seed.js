@@ -1,7 +1,10 @@
+const fs = require("fs");
+const path = require("path");
 const bcrypt = require("bcrypt");
 const sqlite3 = require("sqlite3").verbose();
 const { dbPath } = require("./paths");
 
+const schemaPath = path.join(__dirname, "schema.sql");
 const db = new sqlite3.Database(dbPath);
 
 const sampleUsers = [
@@ -166,6 +169,24 @@ function closeDb() {
     });
 }
 
+function exec(sql) {
+    return new Promise((resolve, reject) => {
+        db.exec(sql, (err) => {
+            if (err) {
+                reject(err);
+                return;
+            }
+
+            resolve();
+        });
+    });
+}
+
+async function ensureSchema() {
+    const schema = fs.readFileSync(schemaPath, "utf8");
+    await exec(schema);
+}
+
 async function upsertUser(user) {
     const passwordHash = await bcrypt.hash(user.password, 10);
 
@@ -271,6 +292,9 @@ async function ensureRecord(record, usersByEmail) {
 
 async function main() {
     try {
+        await ensureSchema();
+        console.log(`Schema ensured for SQLite database at ${dbPath}`);
+
         const usersByEmail = {};
 
         for (const user of sampleUsers) {

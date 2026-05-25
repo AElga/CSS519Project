@@ -5,9 +5,9 @@
   "main": "Project/backend/server.js",
   "scripts": {
     "start": "node Project/backend/server.js",
-    "seed": "node Project/backend/init-db.js && node Project/backend/seed.js",
+    "seed": "node Project/backend/seed.js",
     "reset_db": "node Project/backend/reset-db.js",
-    "refresh_db": "node Project/backend/reset-db.js && node Project/backend/init-db.js && node Project/backend/seed.js",
+    "refresh_db": "node Project/backend/reset-db.js && node Project/backend/seed.js",
     "security_test": "node Project/backend/security_test.js",
     "compliance_test": "node Project/backend/compliance_test.js",
     "prometheus_rule_test": "node OE/prometheus/run-rule-tests.js",

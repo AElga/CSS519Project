@@ -9,4 +9,4 @@ COPY backend ./backend
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "node backend/init-db.js && node backend/seed.js && node backend/server.js"]
+CMD ["sh", "-c", "node backend/seed.js && node backend/server.js"]
