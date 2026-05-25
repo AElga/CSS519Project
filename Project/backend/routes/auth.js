@@ -1,9 +1,9 @@
 const express = require("express");
-const bcrypt = require("bcrypt");
 const { db, logsDb, runTracked, getTracked } = require("../db");
 const { recordLoginAttempt, recordAuditEvent } = require("../metrics");
 const { logEvent } = require("../logger");
 const { signAuthToken } = require("../auth-utils");
+const { hashPassword, verifyPassword } = require("../password-utils");
 
 const router = express.Router();
 
@@ -39,7 +39,7 @@ router.post("/register", async (req, res) => {
         return res.status(400).json({ error: "Password must be at least 12 characters long" });
     }
 
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await hashPassword(password);
 
     runTracked(
         db,
@@ -90,7 +90,7 @@ router.post("/login", (req, res) => {
                 });
             }
 
-            const valid = await bcrypt.compare(password, user.password_hash);
+            const valid = await verifyPassword(password, user.password_hash);
 
             if (!valid) {
                 recordLoginAttempt("invalid_password");

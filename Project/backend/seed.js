@@ -1,8 +1,8 @@
 const fs = require("fs");
 const path = require("path");
-const bcrypt = require("bcrypt");
 const sqlite3 = require("sqlite3").verbose();
 const { dbPath } = require("./paths");
+const { hashPassword } = require("./password-utils");
 
 const schemaPath = path.join(__dirname, "schema.sql");
 const db = new sqlite3.Database(dbPath);
@@ -188,7 +188,7 @@ async function ensureSchema() {
 }
 
 async function upsertUser(user) {
-    const passwordHash = await bcrypt.hash(user.password, 10);
+    const passwordHash = await hashPassword(user.password);
 
     await run(
         `INSERT INTO users(name, email, password_hash, role)
