@@ -37,13 +37,13 @@ groups:
     rules:
       - alert: ElgHealthBackendDown
         expr: up{job="elghealth-backend"} == 0
-        for: 1m
+        for: 10s
         labels:
           severity: critical
           service: backend
         annotations:
           summary: ElgHealth backend is down
-          description: Prometheus has been unable to scrape the ElgHealth backend metrics endpoint for more than 1 minute.
+          description: Prometheus has been unable to scrape the ElgHealth backend metrics endpoint for more than 10 seconds.
 
       - alert: ElgHealthHighApiLatency
         expr: elghealth:http_request_latency:p95_5m{route!="/metrics"} > 0.75
@@ -102,13 +102,13 @@ groups:
 
       - alert: ElgHealthFrontendDown
         expr: probe_success{instance="http://frontend/health"} == 0
-        for: 1m
+        for: 10s
         labels:
           severity: critical
           service: frontend
         annotations:
           summary: ElgHealth frontend is down
-          description: The frontend health endpoint has failed blackbox probes for more than 1 minute.
+          description: The frontend health endpoint has failed blackbox probes for more than 10 seconds.
 
       - alert: ElgHealthContainerCpuHigh
         expr: sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_service="backend"}[5m])) > 0.75
@@ -120,3 +120,42 @@ groups:
         annotations:
           summary: ElgHealth backend container CPU is high
           description: Backend container CPU usage has exceeded 0.75 CPU-seconds per second for 10 minutes.
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: prometheus
+        annotations:
+          summary: Prometheus is down
+          description: Prometheus scrape target is down and not responding to scrapes for more than 10 seconds.
+
+      - alert: GrafanaDown
+        expr: probe_success{instance="http://grafana:3000/"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: grafana
+        annotations:
+          summary: Grafana is down
+          description: Grafana HTTP health probe has failed for more than 10 seconds.
+
+      - alert: UptimeKumaDown
+        expr: probe_success{instance="http://uptime-kuma:3001/"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: uptime-kuma
+        annotations:
+          summary: Uptime Kuma is down
+          description: Uptime Kuma HTTP probe has failed for more than 10 seconds.
+
+      - alert: CadvisorDown
+        expr: up{job="cadvisor"} == 0
+        for: 10s
+        labels:
+          severity: critical
+          service: cadvisor
+        annotations:
+          summary: cAdvisor is down
+          description: Prometheus cannot scrape cAdvisor for container metrics for more than 10 seconds.
