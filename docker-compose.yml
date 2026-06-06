@@ -1,0 +1,131 @@
+services:
+  backend:
+    build:
+      context: ./Project
+      dockerfile: backend/Dockerfile
+    environment:
+      PORT: 3000
+      DB_PATH: /data/elghealth.db
+      LOGS_DB_PATH: /data/logs.db
+      APP_LOG_PATH: /data/app.log
+      JWT_SECRET: docker-compose-dev-secret
+      ALLOWED_ORIGINS: http://localhost:8080,http://127.0.0.1:8080
+    volumes:
+      - sqlite_data:/data
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build:
+      context: ./Project
+      dockerfile: frontend/Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+  traffic-simulator:
+    build:
+      context: ./Project
+      dockerfile: traffic-simulator/Dockerfile
+    depends_on:
+      - backend
+      - frontend
+    environment:
+      BACKEND_URL: http://backend:3000
+      FRONTEND_URL: http://frontend
+      SIM_INTERVAL_MS: 8000
+
+  prometheus:
+    image: prom/prometheus:v3.7.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    volumes:
+      - ./OE/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./OE/prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+      - cadvisor
+      - blackbox-exporter
+
+  grafana:
+    image: grafana/grafana-oss:11.2.0
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: adminElgHealth
+      GF_SECURITY_ADMIN_PASSWORD: SecurePasswordElg123
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/elghealth-observability.json
+    volumes:
+      - ./OE/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./OE/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3002:3000"
+    depends_on:
+      - prometheus
+      - loki
+
+  loki:
+    image: grafana/loki:3.1.1
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/config.yml
+    volumes:
+      - ./OE/loki/config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./OE/promtail/config.yml:/etc/promtail/config.yml:ro
+      - sqlite_data:/var/log/elghealth:ro
+    depends_on:
+      - loki
+      - backend
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/blackbox_exporter/config.yml
+    volumes:
+      - ./OE/blackbox/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+    ports:
+      - "9115:9115"
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    restart: unless-stopped
+    volumes:
+      - ./OE/uptime-kuma/data:/app/data
+    ports:
+      - "3001:3001"
+
+volumes:
+  sqlite_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:

@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: ElgHealth
+    orgId: 1
+    folder: ElgHealth
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards

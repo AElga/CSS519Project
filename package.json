@@ -1,0 +1,23 @@
+{
+  "name": "elghealth-prototype",
+  "version": "1.0.0",
+  "description": "HealthTech Appointment Management Prototype",
+  "main": "Project/backend/server.js",
+  "scripts": {
+    "start": "node Project/backend/server.js",
+    "seed": "node Project/backend/seed.js",
+    "reset_db": "node Project/backend/reset-db.js",
+    "refresh_db": "node Project/backend/reset-db.js && node Project/backend/seed.js",
+    "security_test": "node Project/backend/security_test.js",
+    "compliance_test": "node Project/backend/compliance_test.js",
+    "prometheus_rule_test": "node OE/prometheus/run-rule-tests.js",
+    "dashboard_config_test": "node OE/run-dashboard-tests.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.0",
+    "sqlite3": "^5.1.6"
+  }
+}

@@ -1,0 +1,13 @@
+ok{"timestamp":"2026-05-23T22:13:18.326Z","level":"warn","event":"auth_login_invalid_password","email":"patient@example.com","user_id":1}
+{"timestamp":"2026-05-23T22:13:18.417Z","level":"info","event":"auth_login_success","email":"patient@example.com","user_id":1,"role":"patient"}
+{"timestamp":"2026-05-23T22:13:18.485Z","level":"warn","event":"auth_login_invalid_password","email":"patient@example.com","user_id":1}
+{"timestamp":"2026-05-23T22:13:35.500Z","level":"info","event":"auth_login_success","email":"patient@example.com","user_id":1,"role":"patient"}
+{"timestamp":"2026-05-23T22:13:35.588Z","level":"info","event":"auth_login_success","email":"doctor@example.com","user_id":4,"role":"doctor"}
+{"timestamp":"2026-05-23T22:13:35.593Z","level":"info","event":"appointment_list_loaded","user_id":"1","role":"patient","scope":"active","rows":2}
+{"timestamp":"2026-05-23T22:13:35.597Z","level":"info","event":"appointment_list_loaded","user_id":"1","role":"patient","scope":"archived","rows":1}
+{"timestamp":"2026-05-23T22:13:35.609Z","level":"info","event":"appointment_created","appointment_id":6,"patient_id":1,"doctor_id":4,"appointment_time":"2026-06-01T09:00:00","archived_count":0}
+{"timestamp":"2026-05-23T22:13:35.643Z","level":"info","event":"appointment_created","appointment_id":7,"patient_id":1,"doctor_id":4,"appointment_time":"2026-06-02T09:00:00","archived_count":1}
+{"timestamp":"2026-05-23T22:13:35.676Z","level":"info","event":"appointment_created","appointment_id":8,"patient_id":1,"doctor_id":4,"appointment_time":"2026-06-03T09:00:00","archived_count":1}
+{"timestamp":"2026-05-23T22:13:35.708Z","level":"info","event":"appointment_created","appointment_id":9,"patient_id":1,"doctor_id":4,"appointment_time":"2026-06-04T09:00:00","archived_count":1}
+{"timestamp":"2026-05-23T22:13:35.719Z","level":"info","event":"appointment_list_loaded","user_id":"1","role":"patient","scope":"active","rows":3}
+{"timestamp":"2026-05-23T22:13:35.722Z","level":"info","event":"appointment_list_loaded","user_id":"1","role":"patient","scope":"archived","rows":4}
